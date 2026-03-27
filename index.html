@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentSphere — Onboarding</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f4f5f7;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .launchpad { max-width: 680px; margin: 0 auto; }
+
+  /* HEADER */
+  .header {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 12px;
+    border-left: 4px solid #2563eb;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  .header h1 { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+  .header .sub { font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 14px; }
+  .progress-bar-wrap {
+    background: #e2e8f0; border-radius: 99px; height: 8px; overflow: hidden;
+  }
+  .progress-bar {
+    background: linear-gradient(90deg, #2563eb, #3b82f6);
+    height: 100%; border-radius: 99px;
+    transition: width .5s ease;
+  }
+  .progress-label { font-size: 12px; color: #64748b; margin-top: 6px; text-align: right; }
+
+  /* PHASE CARD */
+  .phase-card {
+    background: #fff;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    transition: box-shadow .2s, border-color .2s;
+  }
+  .phase-card.active  { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.1); }
+  .phase-card.done    { border-color: #16a34a; }
+  .phase-card.locked  { opacity: .45; pointer-events: none; }
+
+  /* PHASE HEADER — always visible */
+  .phase-header {
+    display: flex; align-items: center; padding: 14px 18px; gap: 12px;
+    cursor: default;
+  }
+  .phase-card.active .phase-header { cursor: default; }
+
+  .phase-icon {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; flex-shrink: 0;
+  }
+  .phase-icon.pending  { background: #dbeafe; color: #2563eb; }
+  .phase-icon.active   { background: #2563eb; color: #fff; }
+  .phase-icon.done     { background: #dcfce7; color: #16a34a; font-size: 18px; }
+  .phase-icon.locked   { background: #f1f5f9; color: #94a3b8; }
+
+  .phase-meta { flex: 1; }
+  .phase-num  { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+  .phase-meta h3 { font-size: 14px; font-weight: 600; color: #0f172a; }
+  .phase-meta p  { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+  .phase-badge {
+    font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 99px;
+    text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
+  }
+  .badge-active   { background: #dbeafe; color: #1d4ed8; }
+  .badge-done     { background: #dcfce7; color: #15803d; }
+  .badge-locked   { background: #f1f5f9; color: #94a3b8; }
+  .badge-pending  { background: #fef9c3; color: #854d0e; }
+
+  /* PHASE BODY — only shows on active/done */
+  .phase-body {
+    border-top: 1px solid #f1f5f9;
+    padding: 16px 18px 18px 64px;
+    display: none;
+  }
+  .phase-card.active .phase-body,
+  .phase-card.done .phase-body { display: block; }
+
+  .phase-body .desc {
+    font-size: 13px; color: #475569; margin-bottom: 12px; line-height: 1.6;
+  }
+
+  /* CHECKLIST */
+  .checklist { list-style: none; margin-bottom: 14px; }
+  .checklist li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 13px; color: #334155;
+    padding: 5px 0; border-bottom: 1px solid #f8fafc;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check-icon {
+    width: 17px; height: 17px; border: 2px solid #cbd5e1; border-radius: 4px;
+    flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: #16a34a;
+  }
+  .check-icon.done { background: #dcfce7; border-color: #16a34a; }
+
+  /* BUTTONS */
+  .btn-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 18px; background: #2563eb; color: #fff;
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    text-decoration: none; border: none; cursor: pointer;
+    transition: background .2s;
+  }
+  .cta-btn:hover { background: #1d4ed8; }
+  .cta-btn:disabled, .cta-btn.pending-url {
+    background: #94a3b8; cursor: not-allowed; pointer-events: none;
+  }
+  .cta-btn.done-btn { background: #16a34a; cursor: default; pointer-events: none; }
+  .cta-btn.secondary {
+    background: transparent; color: #64748b;
+    border: 1px solid #e2e8f0;
+  }
+  .cta-btn.secondary:hover { background: #f8fafc; }
+
+  .eta-note { font-size: 11px; color: #94a3b8; margin-top: 10px; }
+  .coming-soon-note {
+    font-size: 12px; color: #F59E0B; font-weight: 600;
+    margin-top: 8px; display: none;
+  }
+
+  /* SUPPORT BAR */
+  .support-bar {
+    background: #fff; border-radius: 12px; padding: 14px 18px; margin-top: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  .support-bar span { font-size: 13px; color: #475569; }
+
+  /* DONE OVERLAY */
+  .done-message {
+    display: none;
+    background: #f0fdf4; border: 1px solid #86efac;
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; color: #166534; margin-bottom: 12px;
+    font-weight: 500;
+  }
+  .phase-card.done .done-message { display: block; }
+
+  /* ALL DONE BANNER */
+  #all-done-banner {
+    display: none;
+    background: linear-gradient(135deg, #15803d, #16a34a);
+    color: white; border-radius: 12px; padding: 24px 28px;
+    text-align: center; margin-bottom: 12px;
+    box-shadow: 0 4px 12px rgba(22,163,74,.3);
+  }
+  #all-done-banner h2 { font-size: 20px; margin-bottom: 6px; }
+  #all-done-banner p { font-size: 13px; opacity: .85; }
+</style>
+</head>
+<body>
+
+<!--
+  ================================================================
+  AGENTSPHERE ONBOARDING LAUNCHPAD
+  ================================================================
+
+  HOW PHASE STATE WORKS:
+  The GHL Custom Menu Link URL must include the agent's current phase:
+
+    YOUR_URL?phase={{custom_values.as__onboarding_phase}}
+
+  n8n updates custom_values.as__onboarding_phase (1–5) each time a
+  phase is completed. The page reads that value and renders the right
+  state automatically.
+
+  JOTFORM URLS — plug in below once Riya provides them:
+  ================================================================
+-->
+
+<script>
+// ================================================================
+// CONFIGURATION — update when Riya provides JotForm URLs
+// ================================================================
+const FORMS = {
+  1: '',   // Phase 1: Agent Intake Form (Build 3.1)
+  2: '',   // Phase 2: A2P Registration Form
+  3: '',   // Phase 3: IDX + Website Setup Form
+  4: '',   // Phase 4: Domain Setup Form
+  5: '',   // Phase 5: Lead System Validation Form
+};
+const SUPPORT_URL = '';  // AS - Support Ticketing Form URL
+// ================================================================
+
+const PHASES = [
+  {
+    num: 1,
+    title: 'Account + Intake',
+    subtitle: 'Complete your profile and submit the onboarding form',
+    desc: 'Before anything else can move forward, your intake form needs to be submitted in full. This gives us everything we need to get your account configured and your team notified.',
+    eta: '~10–15 minutes',
+    items: [
+      { label: 'AgentSphere account created and login confirmed', doneBy: 1 },
+      { label: 'Onboarding intake form submitted (all fields required)', doneBy: 2 },
+      { label: 'Business profile verified by ops team', doneBy: 2 },
+    ],
+    btnLabel: 'Complete Intake Form',
+    doneNote: 'Intake submitted. Your ops team has been notified and is setting up your account.'
+  },
+  {
+    num: 2,
+    title: 'A2P + Communication Setup',
+    subtitle: 'Register for SMS compliance, configure email and phone',
+    desc: 'A2P registration is required by federal carriers before any texts can be sent from your AgentSphere number. This cannot be skipped. Have your EIN (or SSN last 4 digits for sole proprietors) ready before starting.',
+    eta: '~15 minutes to complete + 24–72 hours for carrier approval',
+    items: [
+      { label: 'AgentSphere phone number assigned to your account', doneBy: 3 },
+      { label: 'A2P registration form submitted with correct business info', doneBy: 3 },
+      { label: 'Carrier approval received — texting is now live', doneBy: 3 },
+    ],
+    btnLabel: 'Start A2P Registration',
+    doneNote: 'A2P submitted. Carrier approval takes 24–72 hours — you\'ll get an email when your number is active.'
+  },
+  {
+    num: 3,
+    title: 'IDX + Website Setup',
+    subtitle: 'Connect your property search feed and website',
+    desc: 'Tell us what kind of website setup you need. Based on your scenario (new site, existing GHL site, external site, or Lofty), we\'ll coordinate with our website team to build or configure your home search.',
+    eta: '~20 minutes to complete + 3–5 business days for site build',
+    items: [
+      { label: 'Website scenario confirmed (new site / existing / external)', doneBy: 4 },
+      { label: 'IDX setup form submitted with MLS and domain details', doneBy: 4 },
+      { label: 'Website build initiated by ops team', doneBy: 4 },
+    ],
+    btnLabel: 'Submit IDX + Website Form',
+    doneNote: 'IDX form submitted. Our website team has your request and will reach out to coordinate.'
+  },
+  {
+    num: 4,
+    title: 'Domain Setup',
+    subtitle: 'Connect your domain name to your new website',
+    desc: 'Your domain connects your custom URL (e.g., johnsmith-homes.com) to your new AgentSphere website. You\'ll update a few DNS records — we give you the exact steps for GoDaddy, Namecheap, or wherever your domain is registered.',
+    eta: '~15 minutes to update records + up to 48 hours for DNS to propagate',
+    items: [
+      { label: 'Domain registered or ownership confirmed', doneBy: 5 },
+      { label: 'DNS records updated (we send exact steps for your registrar)', doneBy: 5 },
+      { label: 'Domain connected and verified — website is live at your URL', doneBy: 5 },
+    ],
+    btnLabel: 'Submit Domain Form',
+    doneNote: 'Domain form submitted. DNS changes can take up to 48 hours — your website will be live once propagation is complete.'
+  },
+  {
+    num: 5,
+    title: 'Go Live',
+    subtitle: 'Final check and ops sign-off — you\'re live',
+    desc: 'This is the final step. Your onboarding call with Ben walks you through your GoHighLevel account — how to find and work your leads, respond to messages, and use the pipeline. Once ops signs off, you\'re officially active.',
+    eta: '~30–45 minute onboarding call',
+    items: [
+      { label: 'Onboarding call completed with Ben', doneBy: 6 },
+      { label: 'GoHighLevel pipeline reviewed and understood', doneBy: 6 },
+      { label: 'Ops sign-off complete — account is live', doneBy: 6 },
+    ],
+    btnLabel: 'Book Onboarding Call',
+    doneNote: '🎉 You\'re live! Welcome to AgentSphere. Your leads are being captured and your follow-up sequences are active.'
+  }
+];
+
+// Read current phase from URL param (set by GHL custom menu link)
+function getCurrentPhase() {
+  const p = new URLSearchParams(window.location.search).get('phase');
+  const n = parseInt(p);
+  return (n >= 1 && n <= 6) ? n : 1;
+}
+
+function getPhaseState(phaseNum, currentPhase) {
+  if (phaseNum < currentPhase) return 'done';
+  if (phaseNum === currentPhase) return 'active';
+  return 'locked';
+}
+
+function renderBadge(state) {
+  const map = {
+    done:   ['badge-done',   'Complete'],
+    active: ['badge-active', 'In Progress'],
+    locked: ['badge-locked', 'Locked'],
+  };
+  const [cls, label] = map[state];
+  return `<span class="phase-badge ${cls}">${label}</span>`;
+}
+
+function renderIcon(state, num) {
+  const cls = state === 'done' ? 'done' : state === 'active' ? 'active' : 'locked';
+  const content = state === 'done' ? '✓' : num;
+  return `<div class="phase-icon ${cls}">${content}</div>`;
+}
+
+function renderChecklist(items, currentPhase, phaseNum) {
+  return items.map(item => {
+    const isDone = currentPhase >= item.doneBy;
+    return `<li>
+      <div class="check-icon ${isDone ? 'done' : ''}">${isDone ? '✓' : ''}</div>
+      <span>${item.label}</span>
+    </li>`;
+  }).join('');
+}
+
+function renderCTA(phase, state, formUrl) {
+  if (state === 'done') {
+    return `<div class="done-message">${phase.doneNote}</div>`;
+  }
+  if (!formUrl) {
+    return `
+      <button class="cta-btn pending-url" disabled>▶ ${phase.btnLabel}</button>
+      <p class="coming-soon-note" style="display:block">Form link coming soon — check back shortly.</p>`;
+  }
+  return `<a href="${formUrl}" class="cta-btn" target="_blank">▶ ${phase.btnLabel}</a>`;
+}
+
+function buildLaunchpad() {
+  const currentPhase = getCurrentPhase();
+  const allDone = currentPhase > 5;
+
+  // Header
+  const progressPct = Math.min(((currentPhase - 1) / 5) * 100, 100);
+  const progressLabel = allDone
+    ? 'All phases complete — you\'re live!'
+    : `Phase ${Math.min(currentPhase, 5)} of 5 — ${PHASES[Math.min(currentPhase, 5) - 1].title}`;
+
+  document.getElementById('progress-bar').style.width = (allDone ? 100 : progressPct) + '%';
+  document.getElementById('progress-label').textContent = progressLabel;
+
+  if (allDone) {
+    document.getElementById('all-done-banner').style.display = 'block';
+  }
+
+  // Phase cards
+  const container = document.getElementById('phases');
+  container.innerHTML = PHASES.map(phase => {
+    const state = getPhaseState(phase.num, currentPhase);
+    const formUrl = FORMS[phase.num] || '';
+
+    return `
+      <div class="phase-card ${state}">
+        <div class="phase-header">
+          ${renderIcon(state, phase.num)}
+          <div class="phase-meta">
+            <div class="phase-num">Phase ${phase.num}</div>
+            <h3>${phase.title}</h3>
+            <p>${phase.subtitle}</p>
+          </div>
+          ${renderBadge(state)}
+        </div>
+        <div class="phase-body">
+          ${state === 'done' ? `<div class="done-message">${phase.doneNote}</div>` : `<p class="desc">${phase.desc}</p>`}
+          <ul class="checklist">${renderChecklist(phase.items, currentPhase, phase.num)}</ul>
+          ${state === 'done' ? '' : `
+            <div class="btn-row">
+              ${formUrl
+                ? `<a href="${formUrl}" class="cta-btn" target="_blank">▶ ${phase.btnLabel}</a>`
+                : `<button class="cta-btn pending-url" disabled>▶ ${phase.btnLabel}</button>`
+              }
+              ${SUPPORT_URL ? `<a href="${SUPPORT_URL}" class="cta-btn secondary" target="_blank">Need help?</a>` : ''}
+            </div>
+            ${!formUrl ? `<p class="coming-soon-note" style="display:block">Form link loading — if this persists, contact support.</p>` : ''}
+            <p class="eta-note">⏱ ${phase.eta}</p>
+          `}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', buildLaunchpad);
+</script>
+
+<div class="launchpad">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>AgentSphere Onboarding</h1>
+    <p class="sub">Complete each phase in order to go live. Each form unlocks the next step. Your ops team is notified automatically when you submit.</p>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+    </div>
+    <p class="progress-label" id="progress-label">Loading…</p>
+  </div>
+
+  <!-- ALL DONE BANNER -->
+  <div id="all-done-banner">
+    <h2>🎉 You're fully live!</h2>
+    <p>All 5 phases are complete. Your leads are being captured and your follow-up sequences are active. Book a check-in call with Ben if you have questions.</p>
+  </div>
+
+  <!-- PHASE CARDS -->
+  <div id="phases"></div>
+
+  <!-- SUPPORT BAR -->
+  <div class="support-bar">
+    <span>💬 Stuck on any step? Your ops team is one click away.</span>
+    <script>
+      document.write(SUPPORT_URL
+        ? `<a href="${SUPPORT_URL}" class="cta-btn secondary" target="_blank">Open Support Ticket</a>`
+        : `<span style="font-size:13px;color:#94a3b8;">Support link loading…</span>`
+      );
+    </script>
+  </div>
+
+</div>
+</body>
+</html>
